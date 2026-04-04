@@ -31,24 +31,304 @@ st.set_page_config(
 # ─── CUSTOM CSS ────────────────────────────────────────────
 st.markdown("""
 <style>
+</style>
+    :root {
+        --green-900: #1B5E20;
+        --green-700: #2E7D32;
+        --green-500: #4CAF50;
+        --green-100: #E8F5E9;
+        --gray-900: #1F2937;
+        --gray-700: #4B5563;
+        --gray-500: #6B7280;
+        --gray-200: #E5E7EB;
+        --gray-100: #F3F4F6;
+        --white: #FFFFFF;
+        --shadow-lg: 0 18px 40px rgba(27, 94, 32, 0.10);
+        --shadow-md: 0 12px 24px rgba(31, 41, 55, 0.08);
+        --radius-xl: 20px;
+        --radius-lg: 16px;
+        --radius-md: 12px;
+    }
+
+    html, body, [class*="css"] {
+        font-family: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .stApp {
+        background: linear-gradient(180deg, #F9FCF9 0%, #FFFFFF 38%, #F5F7F8 100%);
+    }
+
+    .block-container {
+        padding-top: 1.2rem;
+        padding-bottom: 2rem;
+    }
+
     .main-header {
-        background: linear-gradient(135deg, #1B5E20, #4CAF50);
-        padding: 20px 30px;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 45%, #4CAF50 100%);
+        padding: 1.5rem 1.6rem;
+        border-radius: var(--radius-xl);
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(255, 255, 255, 0.18);
     }
+
+    .hero-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        color: white;
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.6rem;
+    }
+
+    .section-card {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-xl);
+        padding: 1.1rem 1.2rem;
+        box-shadow: var(--shadow-md);
+        margin: 0.25rem 0 1rem 0;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .subtle-text {
+        color: var(--gray-700);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 0.85rem;
+        margin-top: 0.75rem;
+    }
+
     .metric-card {
-        background: #F1F8E9;
-        border-left: 4px solid #4CAF50;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 8px 0;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F7FBF7 100%);
+        border: 1px solid var(--gray-200);
+        border-top: 4px solid var(--green-500);
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        text-align: center;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
     }
+
+    .metric-card:hover, .info-card:hover, .prediction-card:hover, .sidebar-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 30px rgba(27, 94, 32, 0.12);
+    }
+
+    .metric-kicker {
+        color: var(--green-700);
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .metric-value {
+        color: var(--gray-900);
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-top: 0.25rem;
+    }
+
+    .metric-label {
+        color: var(--gray-500);
+        font-size: 0.88rem;
+        margin-top: 0.15rem;
+    }
+
+    .info-card {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1rem 0.9rem 1rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 0.85rem;
+    }
+
+    .info-card.green {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F4FBF4 100%);
+        border-left: 5px solid var(--green-500);
+    }
+
+    .info-card.gray {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        border-left: 5px solid #94A3B8;
+    }
+
+    .info-card h4 {
+        margin: 0 0 0.45rem 0;
+        color: var(--gray-900);
+        font-size: 1rem;
+    }
+
+    .info-card ul {
+        margin: 0.5rem 0 0 1.1rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+    }
+
+    .prediction-card {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F7FBF7 100%);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-xl);
+        padding: 1.15rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .prediction-banner-green {
+        background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        border: 1px solid #A5D6A7;
+        border-radius: var(--radius-xl);
+        padding: 1.2rem;
+        text-align: center;
+        color: #1B5E20;
+        box-shadow: var(--shadow-md);
+    }
+
+    .prediction-banner-red {
+        background: linear-gradient(135deg, #FFF3E0 0%, #FFCCBC 100%);
+        border: 1px solid #FFAB91;
+        border-radius: var(--radius-xl);
+        padding: 1.2rem;
+        text-align: center;
+        color: #BF360C;
+        box-shadow: var(--shadow-md);
+    }
+
+    .prediction-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        margin-bottom: 0.2rem;
+    }
+
+    .prediction-subtitle {
+        font-size: 0.92rem;
+        opacity: 0.9;
+        line-height: 1.5;
+    }
+
+    .confidence-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.38rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-bottom: 0.55rem;
+    }
+
+    .confidence-high { background: #E8F5E9; color: #1B5E20; }
+    .confidence-moderate { background: #FFF8E1; color: #8A6A00; }
+    .confidence-low { background: #FBE9E7; color: #BF360C; }
+
+    .sidebar-card {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5FBF5 100%);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 0.95rem;
+        box-shadow: var(--shadow-md);
+        margin: 0.8rem 0;
+    }
+
+    .sidebar-card h4 {
+        margin: 0 0 0.45rem 0;
+        color: var(--gray-900);
+        font-size: 0.95rem;
+    }
+
+    .sidebar-card p {
+        margin: 0;
+        color: var(--gray-700);
+        line-height: 1.55;
+        font-size: 0.88rem;
+    }
+
+    div[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #F6FBF6 0%, #FFFFFF 100%);
+        border-right: 1px solid #E5E7EB;
+    }
+
+    div[data-testid="stSidebar"] .block-container {
+        padding-top: 1rem;
+    }
+
+    .stButton > button {
+        background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
+        color: white;
+        border: none;
+        border-radius: 999px;
+        padding: 0.6rem 1.15rem;
+        font-weight: 700;
+        box-shadow: 0 10px 18px rgba(76, 175, 80, 0.22);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.02);
+        box-shadow: 0 14px 24px rgba(76, 175, 80, 0.28);
+    }
+
+    .app-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #D1D5DB, transparent);
+        margin: 1rem 0 1.1rem 0;
+    }
+
+    .callout {
+        background: #F8FAFC;
+        border: 1px solid #E5E7EB;
+        border-radius: var(--radius-lg);
+        padding: 0.9rem 1rem;
+        color: var(--gray-700);
+        box-shadow: var(--shadow-md);
+    }
+
+    @media (max-width: 768px) {
+        .main-header {
+            padding: 1.15rem;
+        }
+
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .prediction-banner-green,
+        .prediction-banner-red {
+            padding: 1rem;
+        }
+    }
+
     .predict-box-green {
         background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
         border: 2px solid #4CAF50;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 20px;
         text-align: center;
         font-size: 22px;
@@ -58,7 +338,7 @@ st.markdown("""
     .predict-box-red {
         background: linear-gradient(135deg, #FBE9E7, #FFCCBC);
         border: 2px solid #FF7043;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 20px;
         text-align: center;
         font-size: 22px;
@@ -66,11 +346,12 @@ st.markdown("""
         color: #BF360C;
     }
     .sidebar-info {
-        background: #E8F5E9;
+        background: #F8FAFC;
         padding: 12px;
-        border-radius: 8px;
+        border-radius: 12px;
         font-size: 13px;
         margin-top: 10px;
+        border: 1px solid #E5E7EB;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -78,10 +359,19 @@ st.markdown("""
 # ─── HEADER ────────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
-    <h1 style="margin:0; font-size:32px">🌿 Green Consumer Behavior Predictor</h1>
-    <p style="margin:5px 0 0 0; opacity:0.9; font-size:15px">
-        ML-powered tool to predict eco-friendly consumer preferences
-    </p>
+    <div class="hero-row">
+        <div>
+            <div class="hero-badge">🌿 Machine Learning Dashboard</div>
+            <h1 style="margin:0; font-size:2rem; line-height:1.15;">Green Consumer Behavior Predictor</h1>
+            <p style="margin:0.55rem 0 0 0; opacity:0.92; font-size:0.98rem; max-width: 720px;">
+                An interactive Streamlit dashboard to predict eco-friendly consumer preferences with clear insights, modern visuals, and beginner-friendly controls.
+            </p>
+        </div>
+        <div style="text-align:right; min-width: 180px;">
+            <div style="font-size:0.85rem; opacity:0.9;">✨ Updated UI</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-top:0.2rem;">Clean • Fast • Readable</div>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -166,7 +456,14 @@ with st.spinner("Training models..."):
 
 # ─── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
-    st.header("⚙️ Navigation")
+    st.markdown("""
+    <div class="sidebar-card">
+        <h4>🌿 Green Consumer Predictor</h4>
+        <p>Navigate through the app, compare models, and try live predictions with a clean dashboard-style interface.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### ⚙️ Navigation")
     tab_choice = st.radio("Go to section:", [
         "🏠 Overview",
         "📊 EDA & Visualizations",
@@ -175,38 +472,43 @@ with st.sidebar:
         "📄 Project Info"
     ])
 
-    st.markdown("---")
     st.markdown("""
-    <div class="sidebar-info">
-    <b>📌 Project Info</b><br>
-    Subject: Machine Learning<br>
-    Topic: Green Consumer Behavior<br>
-    Records: 500 consumers<br>
-    Features: 11 input variables<br>
-    Models: 4 classifiers
+    <div class="sidebar-card">
+    <h4>📌 Project Snapshot</h4>
+    <p>
+        Subject: Machine Learning<br>
+        Topic: Green Consumer Behavior<br>
+        Records: 500 consumers<br>
+        Features: 11 input variables<br>
+        Models: 4 classifiers
+    </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.success(f"🏆 Best Model: **{best_model_name}**\n\nAccuracy: **{trained[best_model_name]['acc']*100:.1f}%**")
+    st.markdown("""
+    <div class="sidebar-card">
+        <h4>🏆 Best Model</h4>
+        <p><strong>{best_model_name}</strong><br>Accuracy: <strong>{accuracy:.1f}%</strong></p>
+    </div>
+    """.format(best_model_name=best_model_name, accuracy=trained[best_model_name]['acc']*100), unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════
 # TAB 1: OVERVIEW
 # ═══════════════════════════════════════════════════════════
 if tab_choice == "🏠 Overview":
-    st.subheader("📋 Problem Statement")
-    st.info("""
-    **Goal:** Predict whether a consumer will prefer eco-friendly (green) products
-    based on socio-demographic and behavioral factors using Machine Learning.
+    st.markdown('<div class="section-title">📋 Problem Statement</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-card">
+        <div class="subtle-text">
+            <strong>Goal:</strong> Predict whether a consumer will prefer eco-friendly (green) products based on socio-demographic and behavioral factors using Machine Learning.<br><br>
+            <strong>Target:</strong> 🟢 <strong>1 = Green Consumer</strong> — Prefers eco-friendly products &nbsp;&nbsp; 🔴 <strong>0 = Non-Green Consumer</strong> — Does not prefer eco-friendly products
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    **Target:**  
-    🟢 **1 = Green Consumer** — Prefers eco-friendly products  
-    🔴 **0 = Non-Green Consumer** — Does not prefer eco-friendly products
-    """)
-
-    st.subheader("🎯 Objectives")
-    cols = st.columns(2)
+    st.markdown('<div class="section-title section-spacing">🎯 Objectives</div>', unsafe_allow_html=True)
+    cols = st.columns(2, gap="large")
     objectives = [
         ("📦", "Build a synthetic consumer dataset with realistic features"),
         ("🔍", "Perform EDA to understand patterns in green consumer behavior"),
@@ -217,42 +519,63 @@ if tab_choice == "🏠 Overview":
     ]
     for i, (icon, text) in enumerate(objectives):
         with cols[i % 2]:
-            st.markdown(f"**{icon} {text}**")
+            st.markdown(f"""
+            <div class="info-card green">
+                <h4>{icon} {text}</h4>
+                <p class="subtle-text">{text}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-    st.subheader("💼 Real-World Importance")
-    c1, c2, c3 = st.columns(3)
+    st.markdown('<div class="section-title section-spacing">💼 Real-World Importance</div>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
         st.markdown("""
-        **🏢 For Businesses**
-        - Target eco-conscious customers
-        - Develop green product lines
-        - Personalized marketing
-        """)
+        <div class="info-card">
+            <h4>🏢 For Businesses</h4>
+            <ul>
+                <li>Target eco-conscious customers</li>
+                <li>Develop green product lines</li>
+                <li>Personalized marketing</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
     with c2:
         st.markdown("""
-        **🏛️ For Government**
-        - Design awareness campaigns
-        - Incentivize green choices
-        - Track sustainability progress
-        """)
+        <div class="info-card">
+            <h4>🏛️ For Government</h4>
+            <ul>
+                <li>Design awareness campaigns</li>
+                <li>Incentivize green choices</li>
+                <li>Track sustainability progress</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
     with c3:
         st.markdown("""
-        **🌱 For NGOs**
-        - Identify at-risk communities
-        - Measure campaign effectiveness
-        - Allocate resources wisely
-        """)
+        <div class="info-card">
+            <h4>🌱 For NGOs</h4>
+            <ul>
+                <li>Identify at-risk communities</li>
+                <li>Measure campaign effectiveness</li>
+                <li>Allocate resources wisely</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.subheader("🗂️ Dataset Sample")
+    st.markdown('<div class="section-title section-spacing">🗂️ Dataset Sample</div>', unsafe_allow_html=True)
     st.dataframe(df.head(10), use_container_width=True)
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Records", f"{len(df):,}")
-    c2.metric("Input Features", "11")
-    c3.metric("Green Consumers", f"{df['Green_Consumer'].sum()}")
-    c4.metric("Non-Green Consumers", f"{(df['Green_Consumer']==0).sum()}")
+    st.markdown('<div class="section-title section-spacing">📊 Quick Metrics</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="metric-grid">
+        <div class="metric-card"><div class="metric-kicker">Total Records</div><div class="metric-value">{len(df):,}</div><div class="metric-label">Synthetic consumers</div></div>
+        <div class="metric-card"><div class="metric-kicker">Input Features</div><div class="metric-value">11</div><div class="metric-label">Behavior + demographic</div></div>
+        <div class="metric-card"><div class="metric-kicker">Green Consumers</div><div class="metric-value">{df['Green_Consumer'].sum()}</div><div class="metric-label">Positive class count</div></div>
+        <div class="metric-card"><div class="metric-kicker">Non-Green Consumers</div><div class="metric-value">{(df['Green_Consumer']==0).sum()}</div><div class="metric-label">Negative class count</div></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.subheader("📖 Features Explained")
+    st.markdown('<div class="section-title section-spacing">📖 Features Explained</div>', unsafe_allow_html=True)
     feat_info = pd.DataFrame({
         "Feature": ["Age", "Income", "Education_Level", "Environmental_Concern",
                     "Social_Influence", "Eco_Awareness", "Past_Green_Purchases",
@@ -281,7 +604,8 @@ if tab_choice == "🏠 Overview":
 # TAB 2: EDA
 # ═══════════════════════════════════════════════════════════
 elif tab_choice == "📊 EDA & Visualizations":
-    st.subheader("📊 Exploratory Data Analysis")
+    st.markdown('<div class="section-title">📊 Exploratory Data Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="app-divider"></div>', unsafe_allow_html=True)
 
     viz = st.selectbox("Choose Visualization:", [
         "Target Distribution",
@@ -354,7 +678,7 @@ elif tab_choice == "📊 EDA & Visualizations":
         ax.legend(); ax.grid(alpha=0.3)
         st.pyplot(fig)
 
-    st.subheader("📝 Basic Statistics")
+    st.markdown('<div class="section-title section-spacing">📝 Basic Statistics</div>', unsafe_allow_html=True)
     st.dataframe(df.describe().round(2), use_container_width=True)
 
 
@@ -362,16 +686,23 @@ elif tab_choice == "📊 EDA & Visualizations":
 # TAB 3: MODEL COMPARISON
 # ═══════════════════════════════════════════════════════════
 elif tab_choice == "🤖 Model Comparison":
-    st.subheader("🤖 Model Performance Comparison")
+    st.markdown('<div class="section-title">🤖 Model Performance Comparison</div>', unsafe_allow_html=True)
+    st.markdown('<div class="app-divider"></div>', unsafe_allow_html=True)
 
     model_names = list(trained.keys())
     accuracies  = [trained[m]["acc"] * 100 for m in model_names]
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4, gap="small")
     cols_list = [c1, c2, c3, c4]
     colors = ["#4CAF50", "#FFA726", "#42A5F5", "#EF5350"]
     for i, (name, col) in enumerate(zip(model_names, cols_list)):
-        col.metric(name.split()[0], f"{accuracies[i]:.1f}%")
+        col.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-kicker">{name}</div>
+            <div class="metric-value">{accuracies[i]:.1f}%</div>
+            <div class="metric-label">Test accuracy</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Bar chart
     fig, ax = plt.subplots(figsize=(9, 4))
@@ -386,7 +717,7 @@ elif tab_choice == "🤖 Model Comparison":
     st.pyplot(fig)
 
     # Feature importance
-    st.subheader("🌟 Feature Importance (Random Forest)")
+    st.markdown('<div class="section-title section-spacing">🌟 Feature Importance (Random Forest)</div>', unsafe_allow_html=True)
     rf = trained["Random Forest"]["model"]
     feat_imp = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=True)
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -398,7 +729,7 @@ elif tab_choice == "🤖 Model Comparison":
     st.pyplot(fig)
 
     # Confusion matrix for selected model
-    st.subheader("🧩 Confusion Matrix")
+    st.markdown('<div class="section-title section-spacing">🧩 Confusion Matrix</div>', unsafe_allow_html=True)
     sel_model = st.selectbox("Select Model:", model_names)
     y_pred_sel = trained[sel_model]["y_pred"]
     cm = confusion_matrix(y_test, y_pred_sel)
@@ -412,7 +743,7 @@ elif tab_choice == "🤖 Model Comparison":
     st.pyplot(fig)
 
     # ROC Curve
-    st.subheader("📈 ROC Curve")
+    st.markdown('<div class="section-title section-spacing">📈 ROC Curve</div>', unsafe_allow_html=True)
     fig, ax = plt.subplots(figsize=(7, 5))
     ax.plot([0,1],[0,1],"k--", alpha=0.4, label="Random (AUC=0.50)")
     for name, color in zip(model_names, colors):
@@ -437,13 +768,13 @@ elif tab_choice == "🤖 Model Comparison":
 # TAB 4: LIVE PREDICTION
 # ═══════════════════════════════════════════════════════════
 elif tab_choice == "🔮 Live Prediction":
-    st.subheader("🔮 Predict Green Consumer Behavior")
-    st.write("Fill in the consumer details and click **Predict** to get the result.")
+    st.markdown('<div class="section-title">🔮 Predict Green Consumer Behavior</div>', unsafe_allow_html=True)
+    st.markdown('<div class="callout">Fill in the consumer details and click <strong>Predict</strong> to get the result.</div>', unsafe_allow_html=True)
 
     selected_model = st.selectbox("Choose Model for Prediction:", list(trained.keys()))
 
     with st.form("prediction_form"):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3 = st.columns(3, gap="large")
 
         with c1:
             st.markdown("**👤 Demographics**")
@@ -504,28 +835,51 @@ elif tab_choice == "🔮 Live Prediction":
             confidence_message = "The model is less certain, so treat this prediction cautiously."
             confidence_color = "error"
 
-        st.markdown("---")
-        st.subheader("📊 Prediction Result")
+        st.markdown('<div class="app-divider"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📊 Prediction Result</div>', unsafe_allow_html=True)
 
-        c1, c2 = st.columns([2, 1])
-        with c1:
+        result_col, detail_col = st.columns([1.7, 1], gap="large")
+        with result_col:
             if pred == 1:
                 st.markdown(f"""
-                <div class="predict-box-green">
-                    🌿 GREEN CONSUMER<br>
-                    <small>This person is likely to prefer eco-friendly products</small>
-                </div>""", unsafe_allow_html=True)
+                <div class="prediction-card">
+                    <div class="prediction-banner-green">
+                        <div class="prediction-title">🌿 Green Consumer</div>
+                        <div class="prediction-subtitle">This person is likely to prefer eco-friendly products.</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                <div class="predict-box-red">
-                    ❌ NON-GREEN CONSUMER<br>
-                    <small>This person is unlikely to prefer eco-friendly products</small>
-                </div>""", unsafe_allow_html=True)
+                <div class="prediction-card">
+                    <div class="prediction-banner-red">
+                        <div class="prediction-title">❌ Non-Green Consumer</div>
+                        <div class="prediction-subtitle">This person is unlikely to prefer eco-friendly products.</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with c2:
-            st.metric("Green Probability", f"{prob:.1f}%")
-            st.metric("Non-Green Probability", f"{100-prob:.1f}%")
-            st.metric("Model Used", selected_model.split()[0])
+        with detail_col:
+            if confidence_color == "success":
+                confidence_class = "confidence-high"
+                confidence_icon = "🟢"
+            elif confidence_color == "warning":
+                confidence_class = "confidence-moderate"
+                confidence_icon = "🟡"
+            else:
+                confidence_class = "confidence-low"
+                confidence_icon = "🔴"
+
+            st.markdown(f"""
+            <div class="prediction-card">
+                <div class="confidence-chip {confidence_class}">{confidence_icon} {confidence_label}</div>
+                <div class="metric-grid" style="grid-template-columns: 1fr; gap: 0.7rem;">
+                    <div class="metric-card"><div class="metric-kicker">Green Probability</div><div class="metric-value">{prob:.1f}%</div><div class="metric-label">Chance of being green</div></div>
+                    <div class="metric-card"><div class="metric-kicker">Non-Green Probability</div><div class="metric-value">{100-prob:.1f}%</div><div class="metric-label">Chance of being non-green</div></div>
+                    <div class="metric-card"><div class="metric-kicker">Model Used</div><div class="metric-value">{selected_model}</div><div class="metric-label">Prediction model</div></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         if confidence_color == "success":
             st.success(f"{confidence_label}: {confidence_message}")
@@ -549,7 +903,7 @@ elif tab_choice == "🔮 Live Prediction":
         st.pyplot(fig)
 
         # Personalized tips
-        st.subheader("💡 Personalized Insights")
+        st.markdown('<div class="section-title section-spacing">💡 Personalized Insights</div>', unsafe_allow_html=True)
         if env_concern < 5:
             st.warning("🌍 Low environmental concern — Education campaigns could help.")
         if eco_aware < 5:
@@ -566,7 +920,8 @@ elif tab_choice == "🔮 Live Prediction":
 # TAB 5: PROJECT INFO
 # ═══════════════════════════════════════════════════════════
 elif tab_choice == "📄 Project Info":
-    st.subheader("📄 Project Architecture")
+    st.markdown('<div class="section-title">📄 Project Architecture</div>', unsafe_allow_html=True)
+    st.markdown('<div class="app-divider"></div>', unsafe_allow_html=True)
     st.code(f"""
   [Data Generation] → [EDA] → [Preprocessing] → [Model Training]
                                                         │
@@ -585,15 +940,20 @@ elif tab_choice == "📄 Project Info":
                               [Streamlit Web App (this!)]
     """, language="text")
 
-    st.subheader("📌 Conclusion")
-    st.success("""
-    - Environmental Concern, Eco Awareness, and Past Green Purchases are the **top predictors**.
-    - {best_model_name} achieves the **highest accuracy**.
-    - The model can reliably classify green vs non-green consumers.
-    - Actionable insights help businesses and governments design targeted strategies.
-    """.format(best_model_name=best_model_name))
+    st.markdown('<div class="section-title section-spacing">📌 Conclusion</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="info-card green">
+        <h4>Key Takeaways</h4>
+        <ul>
+            <li>Environmental Concern, Eco Awareness, and Past Green Purchases are the <strong>top predictors</strong>.</li>
+            <li><strong>{best_model_name}</strong> achieves the <strong>highest accuracy</strong>.</li>
+            <li>The model can reliably classify green vs non-green consumers.</li>
+            <li>Actionable insights help businesses and governments design targeted strategies.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.subheader("🚀 Future Scope")
+    st.markdown('<div class="section-title section-spacing">🚀 Future Scope</div>', unsafe_allow_html=True)
     future = [
         "Use **real survey or e-commerce purchase data** for better generalization",
         "Apply **Deep Learning (ANN/LSTM)** for higher accuracy",
@@ -605,7 +965,7 @@ elif tab_choice == "📄 Project Info":
     for item in future:
         st.markdown(f"✅ {item}")
 
-    st.subheader("📚 Libraries Used")
+    st.markdown('<div class="section-title section-spacing">📚 Libraries Used</div>', unsafe_allow_html=True)
     libs = {
         "pandas": "Data manipulation and analysis",
         "numpy": "Numerical computing",
