@@ -31,7 +31,6 @@ st.set_page_config(
 # ─── CUSTOM CSS ────────────────────────────────────────────
 st.markdown("""
 <style>
-</style>
     :root {
         --green-900: #1B5E20;
         --green-700: #2E7D32;
@@ -55,7 +54,8 @@ st.markdown("""
     }
 
     .stApp {
-        background: linear-gradient(180deg, #F9FCF9 0%, #FFFFFF 38%, #F5F7F8 100%);
+        background: linear-gradient(180deg, #FBFDFC 0%, #FFFFFF 48%, #F6F8F6 100%);
+        color: var(--gray-900);
     }
 
     .block-container {
@@ -270,7 +270,7 @@ st.markdown("""
     }
 
     div[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #F6FBF6 0%, #FFFFFF 100%);
+        background: linear-gradient(180deg, #FBFDFC 0%, #FFFFFF 100%);
         border-right: 1px solid #E5E7EB;
     }
 
