@@ -1,1178 +1,1099 @@
 """
-============================================================
-    GREEN CONSUMER BEHAVIOR PREDICTION - STREAMLIT WEB APP
-    Premium Streamlit-native UI redesign
-    Run with: streamlit run streamlit_app.py
-============================================================
+Green Consumer Behavior Prediction
+
+Streamlit-based ML application that predicts eco-friendly purchasing behavior
+using classification models trained on synthetic consumer data.
+
+Run with: streamlit run streamlit_app.py
 """
 
-import warnings
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import streamlit as st
-import streamlit.components.v1 as components
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_curve, auc
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import seaborn as sns
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.tree import DecisionTreeClassifier
-
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import warnings
 warnings.filterwarnings("ignore")
 
-# ---------------------------------------------------------
-# PAGE CONFIG
-# ---------------------------------------------------------
+# Page configuration
 st.set_page_config(
-    page_title="Green Consumer Predictor",
-    page_icon="🌱",
+    page_title="GreenSense · ML Platform",
+    page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-
-# ---------------------------------------------------------
-# THEME + UI HELPERS
-# ---------------------------------------------------------
-def inject_theme() -> None:
-    st.markdown(
-        """
+# Custom styling (glassmorphism, typography, and layout overrides)
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Urbanist:wght@600;700;800&display=swap');
+/* ── Google Font Import ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
 
+/* ── Root Variables ── */
 :root {
-    --bg-0: #020617;
-    --bg-1: #0b1220;
-    --bg-2: #0f172a;
-    --ink-0: #e2e8f0;
-    --ink-1: #94a3b8;
-    --line: rgba(148, 163, 184, 0.22);
-    --glass: rgba(15, 23, 42, 0.52);
-    --glass-strong: rgba(15, 23, 42, 0.72);
-    --primary: #38bdf8;
-    --primary-2: #60a5fa;
-    --good: #22c55e;
-    --warn: #f59e0b;
-    --bad: #f43f5e;
-    --shadow-soft: 0 10px 35px rgba(2, 6, 23, 0.42);
-    --shadow-glow: 0 0 0 1px rgba(56, 189, 248, 0.18), 0 14px 30px rgba(56, 189, 248, 0.18);
-    --rad-xl: 24px;
-    --rad-lg: 18px;
-    --rad-md: 14px;
-    --ease-out-premium: cubic-bezier(.22, .83, .25, .99);
-    --dur-fast: .24s;
-    --dur-med: .42s;
+  --green-50:  #f0fdf4;
+  --green-100: #dcfce7;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --gray-50:   #f9fafb;
+  --gray-100:  #f3f4f6;
+  --gray-200:  #e5e7eb;
+  --gray-400:  #9ca3af;
+  --gray-600:  #4b5563;
+  --gray-800:  #1f2937;
+  --gray-900:  #111827;
+  --radius-sm: 10px;
+  --radius:    16px;
+  --radius-lg: 24px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 4px 24px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,.10), 0 4px 12px rgba(0,0,0,.06);
+  --glass-bg:  rgba(255,255,255,0.72);
+  --glass-bdr: rgba(255,255,255,0.55);
 }
 
-html, body, [class*="css"] {
-    font-family: Inter, "SF Pro Text", "Segoe UI", sans-serif;
+/* ── Base Reset ── */
+html, body, [data-testid="stAppViewContainer"] {
+  background: linear-gradient(145deg, #f0fdf4 0%, #f8fafc 40%, #f0f9f0 100%) !important;
+  font-family: 'DM Sans', sans-serif !important;
+  color: var(--gray-800) !important;
 }
 
-.stApp {
-    color: var(--ink-0);
-    background:
-      radial-gradient(1200px 700px at 90% -10%, rgba(56, 189, 248, 0.18), transparent 55%),
-      radial-gradient(900px 500px at 10% 10%, rgba(96, 165, 250, 0.12), transparent 50%),
-      linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 40%, var(--bg-2) 100%);
+[data-testid="stHeader"] { background: transparent !important; }
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border-right: 1px solid var(--gray-200) !important;
+  box-shadow: 2px 0 24px rgba(0,0,0,.05) !important;
 }
 
-.block-container {
-    max-width: 1180px;
-    padding-top: .85rem;
-    padding-bottom: 4.8rem;
+[data-testid="stSidebar"] * { color: var(--gray-800) !important; }
+
+[data-testid="stSidebar"] .stRadio label {
+  padding: 8px 14px !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer !important;
+  transition: background .18s ease !important;
+  font-weight: 500 !important;
+  font-size: 0.9rem !important;
 }
 
-.glass-nav {
-    position: sticky;
-    top: .85rem;
-    z-index: 100;
-    margin-bottom: 1.25rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: rgba(2, 6, 23, 0.48);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: var(--shadow-soft);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: .62rem .95rem;
-    transition: background var(--dur-med) var(--ease-out-premium), border-color var(--dur-med) var(--ease-out-premium), box-shadow var(--dur-med) var(--ease-out-premium), transform var(--dur-med) var(--ease-out-premium);
+[data-testid="stSidebar"] .stRadio label:hover {
+  background: var(--green-100) !important;
 }
 
-.glass-nav.scrolled {
-    background: rgba(2, 6, 23, 0.74);
-    border-color: rgba(125, 211, 252, .32);
-    box-shadow: 0 16px 34px rgba(2, 6, 23, .5), 0 0 0 1px rgba(56, 189, 248, .15);
-    transform: translateY(-1px);
+/* ── Main Container ── */
+.main .block-container {
+  max-width: 1180px !important;
+  padding: 2rem 2.5rem 4rem !important;
+  margin: 0 auto !important;
 }
 
-.brand-wrap {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
+/* ── Hero Header ── */
+.hero-wrap {
+  text-align: center;
+  padding: 3.5rem 2rem 2.5rem;
+  margin-bottom: 2rem;
 }
 
-.brand-dot {
-    width: 30px;
-    height: 30px;
-    border-radius: 999px;
-    background: linear-gradient(145deg, var(--primary), #22d3ee);
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.45);
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-100);
+  color: var(--green-700);
+  border: 1px solid var(--green-400);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
 }
 
-.brand-title {
-    font-family: Urbanist, Inter, sans-serif;
-    font-weight: 700;
-    font-size: .98rem;
-    letter-spacing: .01em;
-    color: #e2e8f0;
+.hero-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--gray-900);
+  margin: 0 0 0.6rem;
 }
 
-.brand-sub {
-    color: var(--ink-1);
-    font-size: .76rem;
+.hero-title span {
+  background: linear-gradient(135deg, #16a34a 0%, #4ade80 60%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.nav-pills {
-    display: flex;
-    align-items: center;
-    gap: .45rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+.hero-subtitle {
+  font-size: 1.05rem;
+  color: var(--gray-400);
+  font-weight: 400;
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.65;
 }
 
-.pill {
-    border: 1px solid var(--line);
-    background: rgba(15, 23, 42, 0.55);
-    color: #cbd5e1;
-    border-radius: 999px;
-    font-size: .72rem;
-    padding: .35rem .8rem;
-    transition: background var(--dur-fast) var(--ease-out-premium), border-color var(--dur-fast) var(--ease-out-premium), transform var(--dur-fast) var(--ease-out-premium);
+/* ── Card ── */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-bdr);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 2rem 2.2rem;
+  margin-bottom: 1.6rem;
+  transition: box-shadow .25s ease, transform .25s ease;
 }
 
-.pill:hover {
-    transform: translateY(-1px);
-    border-color: rgba(125, 211, 252, .45);
-    background: rgba(30, 41, 59, .72);
-}
-
-.hero {
-    margin: 1.05rem 0 2.5rem 0;
-    border: 1px solid rgba(96, 165, 250, .25);
-    border-radius: var(--rad-xl);
-    background:
-      linear-gradient(135deg, rgba(7, 12, 22, .78), rgba(12, 21, 38, .58)),
-      radial-gradient(120% 120% at 80% 0%, rgba(56, 189, 248, .22), transparent 55%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-glow);
-    overflow: hidden;
-    position: relative;
-    transition: transform .5s var(--ease-out-premium);
-}
-
-.hero::before {
-    content: "";
-    position: absolute;
-    inset: -40% auto auto -10%;
-    width: 360px;
-    height: 360px;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, rgba(125, 211, 252, .22), transparent 65%);
-    filter: blur(8px);
-    pointer-events: none;
-    animation: drift 8s ease-in-out infinite;
-}
-
-.hero-body {
-    position: relative;
-    z-index: 2;
-    padding: 3.1rem clamp(1.25rem, 4vw, 3.15rem);
-}
-
-.kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    border: 1px solid rgba(148, 163, 184, .35);
-    border-radius: 999px;
-    padding: .35rem .85rem;
-    font-size: .76rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: #cbd5e1;
-    background: rgba(15, 23, 42, .45);
-}
-
-.hero h1 {
-    font-family: Urbanist, Inter, sans-serif;
-    font-size: clamp(2rem, 5.6vw, 3.6rem);
-    line-height: 1.05;
-    letter-spacing: -.04em;
-    margin: .86rem 0 .82rem 0;
-    color: #f8fafc;
-}
-
-.hero p {
-    margin: 0;
-    color: #cbd5e1;
-    font-size: clamp(1rem, 1.25vw, 1.15rem);
-    line-height: 1.72;
-    max-width: 840px;
-}
-
-.stack { margin-top: 2.6rem; }
-
-.section-title {
-    margin: 0 0 1.15rem 0;
-    font-family: Urbanist, Inter, sans-serif;
-    font-size: clamp(1.2rem, 1.2vw, 1.36rem);
-    letter-spacing: -.01em;
-    color: #f1f5f9;
-}
-
-.glass-card {
-    border: 1px solid var(--line);
-    border-radius: var(--rad-lg);
-    background: var(--glass);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: var(--shadow-soft);
-    padding: 1.3rem;
-    transition: transform var(--dur-med) var(--ease-out-premium), box-shadow var(--dur-med) ease, border-color var(--dur-med) ease;
-}
-
-.glass-card:hover {
-    transform: translateY(-4px) scale(1.006);
-    box-shadow: 0 22px 40px rgba(2, 6, 23, .45);
-    border-color: rgba(96, 165, 250, .42);
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
 }
 
 .card-title {
-    color: #e2e8f0;
-    font-size: 1.02rem;
-    font-weight: 600;
-    margin-bottom: .45rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0 0 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card-text {
-    color: #94a3b8;
-    line-height: 1.68;
-    font-size: .96rem;
+.card-subtitle {
+  font-size: 0.83rem;
+  color: var(--gray-400);
+  margin: 0 0 1.4rem;
+  font-weight: 400;
 }
 
-.metric-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(4, minmax(0,1fr));
+/* ── Section Divider ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2.4rem 0 1.6rem;
 }
 
-.metric {
-    border: 1px solid var(--line);
-    border-radius: var(--rad-md);
-    background: rgba(2, 6, 23, .45);
-    padding: 1.05rem;
-    transition: transform var(--dur-fast) var(--ease-out-premium), box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease;
+.section-divider h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--gray-800);
+  margin: 0;
+  white-space: nowrap;
 }
 
-.metric:hover {
-    transform: translateY(-3px);
-    border-color: rgba(56, 189, 248, .4);
-    box-shadow: 0 12px 30px rgba(2, 6, 23, .45);
+.section-divider .line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--green-200), transparent);
 }
 
-.metric-kicker {
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    font-size: .68rem;
-    font-weight: 600;
+/* ── Metric Pill ── */
+.metric-pill {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-bdr);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
-.metric-value {
-    margin-top: .25rem;
-    color: #f8fafc;
-    font-size: clamp(1.4rem, 2.45vw, 2.04rem);
-    font-weight: 700;
-    letter-spacing: -.02em;
+.metric-pill:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
 }
 
-.metric-label {
-    color: #94a3b8;
-    font-size: .81rem;
-    margin-top: .18rem;
+.metric-pill .metric-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.1rem;
+  color: var(--green-600);
+  line-height: 1;
+  margin-bottom: 4px;
 }
 
-.soft-divider {
-    margin: 1.75rem 0;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(148,163,184,.05), rgba(148,163,184,.35), rgba(148,163,184,.05));
+.metric-pill .metric-label {
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.plot-shell {
-    border: 1px solid var(--line);
-    border-radius: var(--rad-lg);
-    background: var(--glass-strong);
-    padding: .82rem;
-    box-shadow: var(--shadow-soft);
-    transition: transform var(--dur-med) var(--ease-out-premium), box-shadow var(--dur-med) ease, border-color var(--dur-med) ease;
+/* ── Model Comparison Table ── */
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  transition: background .18s;
+  margin-bottom: 4px;
 }
 
-.plot-shell:hover {
-    transform: translateY(-2px);
-    border-color: rgba(96, 165, 250, .45);
-    box-shadow: 0 20px 34px rgba(2, 6, 23, .45);
+.model-row:hover { background: var(--green-50); }
+
+.model-row.best { background: var(--green-100); border: 1px solid var(--green-300); }
+
+.model-badge {
+  background: var(--green-500);
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.reveal {
-    opacity: 0;
-    transform: translateY(16px);
-    transition: opacity .62s var(--ease-out-premium), transform .62s var(--ease-out-premium);
+/* ── Prediction Result ── */
+.result-card-positive {
+  background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+  border: 1.5px solid var(--green-400);
+  border-radius: var(--radius-lg);
+  padding: 2.8rem 2.4rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(34,197,94,.15);
 }
 
-.reveal.in-view {
-    opacity: 1;
-    transform: translateY(0px);
+.result-card-negative {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+  border: 1.5px solid #fca5a5;
+  border-radius: var(--radius-lg);
+  padding: 2.8rem 2.4rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(239,68,68,.10);
 }
 
-div[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(11,18,32,.9));
-    border-right: 1px solid var(--line);
+.result-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray-400);
+  margin-bottom: 0.6rem;
 }
 
-div[data-testid="stSidebar"] .block-container {
-    padding-top: 1.25rem;
+.result-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.6rem;
+  font-weight: 400;
+  margin-bottom: 0.4rem;
 }
 
-.sidebar-box {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: rgba(15, 23, 42, .5);
-    padding: .95rem;
-    margin-bottom: .95rem;
-    transition: border-color var(--dur-fast) var(--ease-out-premium), transform var(--dur-fast) var(--ease-out-premium), background var(--dur-fast) var(--ease-out-premium);
+.confidence-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 6px;
 }
 
-.sidebar-box:hover {
-    transform: translateY(-1px);
-    border-color: rgba(125, 211, 252, .34);
-    background: rgba(30, 41, 59, .48);
+.confidence-high   { background: #dcfce7; color: #15803d; }
+.confidence-medium { background: #fef9c3; color: #854d0e; }
+.confidence-low    { background: #fee2e2; color: #991b1b; }
+
+/* ── Progress Bar Override ── */
+.stProgress > div > div > div > div {
+  background: linear-gradient(90deg, var(--green-500), var(--green-400)) !important;
+  border-radius: 99px !important;
 }
 
-.sidebar-box h4 {
-    margin: 0 0 .35rem 0;
-    color: #f1f5f9;
-    font-size: .97rem;
+/* ── Streamlit Widget Cleanup ── */
+.stSelectbox > div > div,
+.stSlider > div > div > div,
+.stTextInput > div > div {
+  border-radius: var(--radius-sm) !important;
 }
 
-.sidebar-box p {
-    margin: 0;
-    color: #94a3b8;
-    line-height: 1.6;
-    font-size: .84rem;
+.stButton > button {
+  background: linear-gradient(135deg, var(--green-600), var(--green-500)) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.55rem 1.6rem !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 2px 12px rgba(22,163,74,.3) !important;
+  transition: all .22s ease !important;
 }
 
-.stButton > button,
-.stForm button[kind="primary"] {
-    border-radius: 999px !important;
-    border: 1px solid rgba(56, 189, 248, .35) !important;
-    background: linear-gradient(135deg, rgba(14,165,233,.26), rgba(59,130,246,.2)) !important;
-    color: #f8fafc !important;
-    height: 2.9rem !important;
-    font-weight: 600 !important;
-    box-shadow: 0 8px 20px rgba(14, 165, 233, .25) !important;
-    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease !important;
+.stButton > button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(22,163,74,.4) !important;
 }
 
-.stButton > button:hover,
-.stForm button[kind="primary"]:hover {
-    transform: translateY(-2px) scale(1.01) !important;
-    border-color: rgba(125, 211, 252, .8) !important;
-    box-shadow: 0 14px 28px rgba(14, 165, 233, .34) !important;
+/* ── Expander ── */
+.streamlit-expanderHeader {
+  background: var(--glass-bg) !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--glass-bdr) !important;
 }
 
-.stSelectbox label,
-.stSlider label,
-.stNumberInput label,
-.stRadio label {
-    color: #cbd5e1 !important;
-    font-weight: 500 !important;
-}
+/* ── DataFrame ── */
+.stDataFrame { border-radius: var(--radius-sm) !important; overflow: hidden !important; }
 
-div[data-baseweb="select"] > div,
-.stNumberInput input,
-.stTextInput input {
-    background: rgba(15, 23, 42, .62) !important;
-    border: 1px solid var(--line) !important;
-    color: #e2e8f0 !important;
-    border-radius: 12px !important;
-}
-
-@media (max-width: 1080px) {
-    .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .glass-nav { border-radius: 18px; }
-}
-
-@media (max-width: 720px) {
-    .metric-grid { grid-template-columns: 1fr; }
-    .hero-body { padding: 1.6rem 1rem; }
-    .glass-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: .6rem;
-    }
-    .nav-pills {
-        width: 100%;
-        justify-content: flex-start;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .reveal,
-    .glass-card,
-    .metric,
-    .plot-shell,
-    .pill,
-    .glass-nav,
-    .hero {
-        animation: none !important;
-        transition: none !important;
-        transform: none !important;
-    }
-}
-
-@keyframes drift {
-    0%, 100% { transform: translate(0px, 0px); }
-    50% { transform: translate(12px, 12px); }
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  margin-top: 4rem;
+  padding: 1.4rem;
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  border-top: 1px solid var(--gray-200);
 }
 </style>
-""",
-        unsafe_allow_html=True,
-    )
-
-    # Streamlit-compatible scroll reveal and subtle parallax via parent document observer.
-    components.html(
-        """
-<script>
-(function () {
-  const pdoc = window.parent && window.parent.document ? window.parent.document : document;
-  function mount() {
-    const els = pdoc.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.classList.add('in-view');
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
-
-    els.forEach(el => observer.observe(el));
-
-        const hero = pdoc.querySelector('.hero');
-        const nav = pdoc.querySelector('.glass-nav');
-    const onScroll = () => {
-            const sy = window.parent.scrollY || 0;
-            if (nav) {
-                if (sy > 24) nav.classList.add('scrolled');
-                else nav.classList.remove('scrolled');
-            }
-      if (!hero) return;
-            const y = Math.min(sy, 240);
-      hero.style.transform = `translateY(${y * 0.03}px)`;
-    };
-
-    window.parent.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
-
-  setTimeout(mount, 60);
-})();
-</script>
-""",
-        height=0,
-        width=0,
-    )
+""", unsafe_allow_html=True)
 
 
-def glass_nav(best_model_name: str, best_accuracy: float) -> None:
-    st.markdown(
-        f"""
-<div class="glass-nav reveal">
-  <div class="brand-wrap">
-    <div class="brand-dot"></div>
-    <div>
-      <div class="brand-title">Green Consumer Intelligence</div>
-      <div class="brand-sub">Premium ML Analytics Dashboard</div>
-    </div>
-  </div>
-  <div class="nav-pills">
-    <span class="pill">Streamlit Native</span>
-    <span class="pill">Best: {best_model_name}</span>
-    <span class="pill">Accuracy {best_accuracy:.1f}%</span>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+# Data loading and preprocessing
 
-
-def hero_section() -> None:
-    st.markdown(
-        """
-<section class="hero reveal">
-  <div class="hero-body">
-    <span class="kicker">Sustainable Analytics Platform</span>
-    <h1>Predict Eco-First Buyers<br/>With Precision And Clarity.</h1>
-    <p>
-      A modern, high-end interface for exploring green consumer behavior using machine learning.
-      Built for smooth workflows, strong visual hierarchy, and production-grade user experience.
-    </p>
-  </div>
-</section>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-def render_plot(fig) -> None:
-    st.markdown('<div class="plot-shell reveal">', unsafe_allow_html=True)
-    st.pyplot(fig)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------
-# DATA + MODELS
-# ---------------------------------------------------------
-@st.cache_resource
-def load_model_and_data():
+@st.cache_data
+def load_data():
+    """Generate a synthetic consumer dataset with 1,200 records and derived target labels."""
     np.random.seed(42)
-    n_rows = 500
-    scaled_models = ["Logistic Regression"]
+    n = 1200
 
-    age = np.random.randint(18, 70, n_rows)
-    income = np.random.randint(20000, 150000, n_rows)
-    education_level = np.random.choice([0, 1, 2, 3], n_rows, p=[0.05, 0.30, 0.40, 0.25])
-    environmental_concern = np.random.randint(1, 11, n_rows)
-    social_influence = np.random.randint(1, 11, n_rows)
-    eco_awareness = np.random.randint(1, 11, n_rows)
-    past_green_purchases = np.random.randint(0, 20, n_rows)
-    price_sensitivity = np.random.randint(1, 11, n_rows)
-    marketing_exposure = np.random.randint(1, 11, n_rows)
-    gender = np.random.choice([0, 1], n_rows)
-    location = np.random.choice([0, 1, 2], n_rows, p=[0.20, 0.35, 0.45])
+    age = np.random.randint(18, 70, n)
+    income = np.random.choice(["Low", "Medium", "High"], n, p=[0.3, 0.45, 0.25])
+    education = np.random.choice(["High School", "Bachelor's", "Master's", "PhD"], n, p=[0.25, 0.40, 0.25, 0.10])
+    env_awareness = np.random.randint(1, 11, n)
+    social_influence = np.random.randint(1, 11, n)
+    eco_label_trust = np.random.randint(1, 11, n)
+    price_sensitivity = np.random.randint(1, 11, n)
+    purchase_freq = np.random.choice(["Rarely", "Sometimes", "Often", "Always"], n, p=[0.2, 0.3, 0.3, 0.2])
+    region = np.random.choice(["Urban", "Suburban", "Rural"], n, p=[0.5, 0.3, 0.2])
+
+    income_score = {"Low": 0, "Medium": 1, "High": 2}
+    edu_score    = {"High School": 0, "Bachelor's": 1, "Master's": 2, "PhD": 3}
+    freq_score   = {"Rarely": 0, "Sometimes": 1, "Often": 2, "Always": 3}
+    region_score = {"Urban": 2, "Suburban": 1, "Rural": 0}
 
     score = (
-        0.25 * (environmental_concern / 10)
-        + 0.20 * (eco_awareness / 10)
-        + 0.15 * (social_influence / 10)
-        + 0.15 * (past_green_purchases / 20)
-        + 0.10 * (income / 150000)
-        + 0.10 * (education_level / 3)
-        + 0.05 * (1 - price_sensitivity / 10)
-        + np.random.normal(0, 0.05, n_rows)
-    )
-    green_consumer = (score > 0.45).astype(int)
-
-    df = pd.DataFrame(
-        {
-            "Age": age,
-            "Income": income,
-            "Education_Level": education_level,
-            "Environmental_Concern": environmental_concern,
-            "Social_Influence": social_influence,
-            "Eco_Awareness": eco_awareness,
-            "Past_Green_Purchases": past_green_purchases,
-            "Price_Sensitivity": price_sensitivity,
-            "Marketing_Exposure": marketing_exposure,
-            "Gender": gender,
-            "Location": location,
-            "Green_Consumer": green_consumer,
-        }
+        0.30 * env_awareness
+        + 0.20 * social_influence
+        + 0.15 * eco_label_trust
+        - 0.10 * price_sensitivity
+        + 0.12 * np.array([income_score[i]  for i in income])   * 2
+        + 0.08 * np.array([edu_score[i]     for i in education]) * 1.5
+        + 0.10 * np.array([freq_score[i]    for i in purchase_freq]) * 2
+        + 0.05 * np.array([region_score[i]  for i in region])
+        + np.random.normal(0, 0.8, n)
     )
 
-    x_data = df.drop("Green_Consumer", axis=1)
-    y_data = df["Green_Consumer"]
-    x_train, x_test, y_train, y_test = train_test_split(
-        x_data, y_data, test_size=0.2, random_state=42, stratify=y_data
-    )
+    behavior = (score > np.median(score)).astype(int)
 
+    return pd.DataFrame({
+        "Age": age,
+        "Income": income,
+        "Education": education,
+        "Environmental_Awareness": env_awareness,
+        "Social_Influence": social_influence,
+        "Eco_Label_Trust": eco_label_trust,
+        "Price_Sensitivity": price_sensitivity,
+        "Purchase_Frequency": purchase_freq,
+        "Region": region,
+        "Green_Purchase_Behavior": behavior,
+    })
+
+
+def encode_data(df):
+    """Label-encode categorical features and split into X, y with encoder references."""
+    df_enc = df.copy()
+    encoders = {}
+    cat_cols = ["Income", "Education", "Purchase_Frequency", "Region"]
+    for col in cat_cols:
+        le = LabelEncoder()
+        df_enc[col] = le.fit_transform(df_enc[col])
+        encoders[col] = le
+
+    feature_cols = [
+        "Age", "Income", "Education",
+        "Environmental_Awareness", "Social_Influence",
+        "Eco_Label_Trust", "Price_Sensitivity",
+        "Purchase_Frequency", "Region",
+    ]
+    X = df_enc[feature_cols]
+    y = df_enc["Green_Purchase_Behavior"]
+    return X, y, encoders, feature_cols
+
+
+# Model training and evaluation
+
+@st.cache_data
+def train_models(X_train, X_test, y_train, y_test):
+    """Train five classifiers and return a dict of fitted models, metrics, and predictions."""
     scaler = StandardScaler()
-    x_train_sc = scaler.fit_transform(x_train)
-    x_test_sc = scaler.transform(x_test)
+    X_tr_s = scaler.fit_transform(X_train)
+    X_te_s = scaler.transform(X_test)
 
     models = {
-        "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
-        "Gradient Boosting": GradientBoostingClassifier(n_estimators=100, random_state=42),
-        "Decision Tree": DecisionTreeClassifier(max_depth=6, random_state=42),
-        "Logistic Regression": LogisticRegression(
-            max_iter=1000, random_state=42, class_weight="balanced"
-        ),
+        "Logistic Regression":      LogisticRegression(max_iter=500, class_weight="balanced", random_state=42),
+        "Decision Tree":            DecisionTreeClassifier(max_depth=6, random_state=42),
+        "Random Forest":            RandomForestClassifier(n_estimators=150, random_state=42),
+        "Gradient Boosting":        GradientBoostingClassifier(n_estimators=150, random_state=42),
+        "Support Vector Machine":   SVC(kernel="rbf", probability=True, random_state=42),
     }
 
-    trained = {}
-    for name, model in models.items():
-        if name in scaled_models:
-            model.fit(x_train_sc, y_train)
-            y_pred = model.predict(x_test_sc)
-        else:
-            model.fit(x_train, y_train)
-            y_pred = model.predict(x_test)
-
-        trained[name] = {
-            "model": model,
-            "acc": accuracy_score(y_test, y_pred),
-            "y_pred": y_pred,
+    results = {}
+    for name, mdl in models.items():
+        uses_scale = name in ("Logistic Regression", "Support Vector Machine")
+        Xtr = X_tr_s if uses_scale else X_train
+        Xte = X_te_s if uses_scale else X_test
+        mdl.fit(Xtr, y_train)
+        preds = mdl.predict(Xte)
+        acc   = accuracy_score(y_test, preds)
+        results[name] = {
+            "model": mdl,
+            "acc":   acc,
+            "preds": preds,
+            "scaler": scaler if uses_scale else None,
+            "report": classification_report(y_test, preds, output_dict=True),
+            "cm": confusion_matrix(y_test, preds),
         }
 
-    best_model_name = max(trained, key=lambda k: trained[k]["acc"])
-    return df, x_data, y_data, x_train, x_test, y_train, y_test, scaler, trained, scaled_models, best_model_name
+    return results
 
 
-# ---------------------------------------------------------
-# APP BOOTSTRAP
-# ---------------------------------------------------------
-inject_theme()
-plt.style.use("dark_background")
-
-with st.spinner("Training models..."):
-    (
-        df,
-        x_data,
-        y_data,
-        x_train,
-        x_test,
-        y_train,
-        y_test,
-        scaler,
-        trained,
-        scaled_models,
-        best_model_name,
-    ) = load_model_and_data()
-
-best_accuracy = trained[best_model_name]["acc"] * 100
-
-glass_nav(best_model_name, best_accuracy)
-hero_section()
-
-
-# ---------------------------------------------------------
-# SIDEBAR NAV
-# ---------------------------------------------------------
-with st.sidebar:
-    st.markdown(
-        """
-<div class="sidebar-box">
-  <h4>Navigation</h4>
-  <p>Move through insights, visual analytics, model benchmarking, and live prediction.</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    tab_choice = st.radio(
-        "Go to section",
-        [
-            "Overview",
-            "EDA and Visualizations",
-            "Model Comparison",
-            "Live Prediction",
-            "Project Info",
-        ],
-        label_visibility="visible",
-    )
-
-    st.markdown(
-        f"""
-<div class="sidebar-box">
-  <h4>Project Snapshot</h4>
-  <p>
-    Records: 500<br/>
-    Features: 11<br/>
-    Models: 4 classifiers<br/>
-    Best Model: {best_model_name}<br/>
-    Accuracy: {best_accuracy:.1f}%
-  </p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
-# ---------------------------------------------------------
-# OVERVIEW
-# ---------------------------------------------------------
-if tab_choice == "Overview":
-    st.markdown('<h2 class="section-title reveal">Problem Statement</h2>', unsafe_allow_html=True)
-    st.markdown(
-        """
-<div class="glass-card reveal">
-  <div class="card-text">
-    Predict whether a user is likely to purchase eco-friendly products using socio-demographic and behavioral signals.
-    <br/><br/>
-    Target classes: <strong>1 = Green Consumer</strong>, <strong>0 = Non-Green Consumer</strong>.
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Core Objectives</h2>', unsafe_allow_html=True)
-
-    objective_cards = [
-        "Build realistic synthetic consumer data",
-        "Explore behavioral patterns through EDA",
-        "Train and compare classification models",
-        "Evaluate accuracy and ROC-AUC",
-        "Identify key drivers of green buying",
-        "Enable interactive prediction workflow",
-    ]
-
-    cols = st.columns(3, gap="large")
-    for idx, text in enumerate(objective_cards):
-        with cols[idx % 3]:
-            st.markdown(
-                f"""
-<div class="glass-card reveal">
-  <div class="card-title">Objective {idx + 1:02d}</div>
-  <div class="card-text">{text}</div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Quick Metrics</h2>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-<div class="metric-grid reveal">
-  <div class="metric">
-    <div class="metric-kicker">Total Records</div>
-    <div class="metric-value">{len(df):,}</div>
-    <div class="metric-label">Consumer profiles</div>
-  </div>
-  <div class="metric">
-    <div class="metric-kicker">Input Features</div>
-    <div class="metric-value">11</div>
-    <div class="metric-label">Behavior + demographic</div>
-  </div>
-  <div class="metric">
-    <div class="metric-kicker">Green Class</div>
-    <div class="metric-value">{df['Green_Consumer'].sum()}</div>
-    <div class="metric-label">Positive outcomes</div>
-  </div>
-  <div class="metric">
-    <div class="metric-kicker">Non-Green Class</div>
-    <div class="metric-value">{(df['Green_Consumer'] == 0).sum()}</div>
-    <div class="metric-label">Negative outcomes</div>
-  </div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="soft-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Dataset Preview</h2>', unsafe_allow_html=True)
-    st.dataframe(df.head(12), use_container_width=True)
-
-
-# ---------------------------------------------------------
-# EDA
-# ---------------------------------------------------------
-elif tab_choice == "EDA and Visualizations":
-    st.markdown('<h2 class="section-title reveal">Exploratory Visual Analytics</h2>', unsafe_allow_html=True)
-
-    viz = st.selectbox(
-        "Choose Visualization",
-        [
-            "Target Distribution",
-            "Feature Distributions",
-            "Correlation Heatmap",
-            "Boxplots by Consumer Type",
-            "Income vs Environmental Concern",
-        ],
-    )
-
-    if viz == "Target Distribution":
-        fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-        counts = df["Green_Consumer"].value_counts()
-        axes[0].pie(
-            counts,
-            labels=["Green", "Non-Green"],
-            autopct="%1.1f%%",
-            colors=["#22c55e", "#f43f5e"],
-            wedgeprops={"edgecolor": "#0f172a", "linewidth": 2},
-            textprops={"color": "#e2e8f0"},
-        )
-        axes[0].set_title("Class Proportion", color="#e2e8f0")
-
-        axes[1].bar(["Non-Green", "Green"], counts.values, color=["#f43f5e", "#22c55e"])
-        axes[1].set_title("Class Count", color="#e2e8f0")
-        axes[1].set_ylabel("Count")
-        axes[1].tick_params(colors="#cbd5e1")
-        render_plot(fig)
-
-    elif viz == "Feature Distributions":
-        feature = st.selectbox("Select Feature", x_data.columns.tolist())
-        fig, ax = plt.subplots(figsize=(9, 4.3))
-        ax.hist(
-            df[df["Green_Consumer"] == 0][feature],
-            bins=16,
-            alpha=0.55,
-            color="#f43f5e",
-            label="Non-Green",
-        )
-        ax.hist(
-            df[df["Green_Consumer"] == 1][feature],
-            bins=16,
-            alpha=0.55,
-            color="#22c55e",
-            label="Green",
-        )
-        ax.set_title(f"Distribution of {feature}")
-        ax.legend()
-        ax.grid(alpha=0.18)
-        render_plot(fig)
-
-    elif viz == "Correlation Heatmap":
-        fig, ax = plt.subplots(figsize=(11, 8))
-        corr = df.corr(numeric_only=True)
-        mask = np.triu(np.ones_like(corr, dtype=bool))
-        sns.heatmap(
-            corr,
-            annot=True,
-            fmt=".2f",
-            cmap="icefire",
-            mask=mask,
-            linewidths=0.6,
-            ax=ax,
-            vmin=-1,
-            vmax=1,
-            annot_kws={"size": 8},
-        )
-        ax.set_title("Correlation Heatmap")
-        render_plot(fig)
-
-    elif viz == "Boxplots by Consumer Type":
-        feature = st.selectbox("Select Feature", x_data.columns.tolist(), key="box_feature")
-        fig, ax = plt.subplots(figsize=(7, 4.2))
-        bp = ax.boxplot(
-            [df[df["Green_Consumer"] == 0][feature], df[df["Green_Consumer"] == 1][feature]],
-            labels=["Non-Green", "Green"],
-            patch_artist=True,
-        )
-        bp["boxes"][0].set_facecolor("#f43f5e")
-        bp["boxes"][1].set_facecolor("#22c55e")
-        ax.set_title(f"{feature} by Consumer Type")
-        ax.grid(alpha=0.2)
-        render_plot(fig)
-
+def confidence_label(prob: float) -> tuple[str, str]:
+    """Map a prediction probability to a human-readable confidence label and CSS class."""
+    if prob >= 0.80:
+        return "High Confidence", "confidence-high"
+    elif prob >= 0.60:
+        return "Medium Confidence", "confidence-medium"
     else:
-        fig, ax = plt.subplots(figsize=(8.5, 5))
-        for label, color, marker in [(0, "#f43f5e", "x"), (1, "#22c55e", "o")]:
-            subset = df[df["Green_Consumer"] == label]
-            ax.scatter(
-                subset["Income"],
-                subset["Environmental_Concern"],
-                c=color,
-                label="Green" if label else "Non-Green",
-                alpha=0.55,
-                s=42,
-                marker=marker,
-            )
-        ax.set_xlabel("Income")
-        ax.set_ylabel("Environmental Concern")
-        ax.set_title("Income vs Environmental Concern")
-        ax.grid(alpha=0.24)
-        ax.legend()
-        render_plot(fig)
-
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Summary Statistics</h2>', unsafe_allow_html=True)
-    st.dataframe(df.describe().round(2), use_container_width=True)
+        return "Low Confidence", "confidence-low"
 
 
-# ---------------------------------------------------------
-# MODEL COMPARISON
-# ---------------------------------------------------------
-elif tab_choice == "Model Comparison":
-    st.markdown('<h2 class="section-title reveal">Model Benchmarks</h2>', unsafe_allow_html=True)
+# Chart styling utilities
 
-    model_names = list(trained.keys())
-    accuracies = [trained[m]["acc"] * 100 for m in model_names]
+GREEN_PALETTE = ["#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7"]
+ACCENT = "#16a34a"
 
-    metric_html = []
-    for name, acc in zip(model_names, accuracies):
-        metric_html.append(
-            f"""
-<div class="metric">
-  <div class="metric-kicker">{name}</div>
-  <div class="metric-value">{acc:.1f}%</div>
-  <div class="metric-label">Test Accuracy</div>
-</div>
-"""
-        )
 
-    st.markdown(f'<div class="metric-grid reveal">{"".join(metric_html)}</div>', unsafe_allow_html=True)
+def style_ax(ax, title="", xlabel="", ylabel=""):
+    """Apply consistent styling to a matplotlib axes object."""
+    ax.set_facecolor("#fafafa")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["left", "bottom"]].set_color("#e5e7eb")
+    ax.tick_params(colors="#6b7280", labelsize=9)
+    ax.set_title(title, fontsize=11, fontweight="bold", color="#1f2937", pad=12)
+    ax.set_xlabel(xlabel, fontsize=9, color="#9ca3af", labelpad=8)
+    ax.set_ylabel(ylabel, fontsize=9, color="#9ca3af", labelpad=8)
 
-    fig, ax = plt.subplots(figsize=(9.6, 4.5))
-    bars = ax.bar(model_names, accuracies, color=["#22c55e", "#0ea5e9", "#f59e0b", "#f43f5e"], width=0.55)
-    ax.set_ylim(60, 100)
-    ax.set_ylabel("Accuracy (%)")
-    ax.set_title("Model Accuracy Comparison")
-    ax.grid(alpha=0.22, axis="y")
-    for bar, acc in zip(bars, accuracies):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.35,
-            f"{acc:.1f}%",
-            ha="center",
-            fontsize=9,
-            color="#e2e8f0",
-        )
-    render_plot(fig)
 
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Feature Importance (Random Forest)</h2>', unsafe_allow_html=True)
-    rf_model = trained["Random Forest"]["model"]
-    feat_imp = pd.Series(rf_model.feature_importances_, index=x_data.columns).sort_values(ascending=True)
+def fig_to_st(fig):
+    """Render a matplotlib figure in Streamlit and clean up."""
+    fig.patch.set_facecolor("none")
+    st.pyplot(fig)
+    plt.close(fig)
 
-    fig, ax = plt.subplots(figsize=(8.5, 5.2))
-    feat_imp.plot(kind="barh", ax=ax, color=sns.color_palette("mako", len(feat_imp)))
-    ax.set_xlabel("Importance Score")
-    ax.set_title("Top Feature Contributions")
-    render_plot(fig)
 
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Confusion Matrix and ROC</h2>', unsafe_allow_html=True)
+# Sidebar navigation
 
-    selected_model = st.selectbox("Select Model", model_names)
-    y_pred_sel = trained[selected_model]["y_pred"]
+with st.sidebar:
+    st.markdown("""
+    <div style='text-align:center; padding: 1.2rem 0 1rem;'>
+      <div style='font-size:2rem;'>🌿</div>
+      <div style='font-weight:700; font-size:1.05rem; color:#15803d; margin-top:4px;'>GreenSense</div>
+      <div style='font-size:0.75rem; color:#9ca3af; margin-top:2px;'>ML Insights Platform</div>
+    </div>
+    <hr style='border:none;border-top:1px solid #e5e7eb;margin:0.6rem 0 1rem;'>
+    """, unsafe_allow_html=True)
 
-    c1, c2 = st.columns([1, 1.25], gap="large")
+    nav = st.radio(
+        "Navigate",
+        ["🏠  Overview", "🔬  Explore Data", "🤖  Train Models", "🎯  Predict", "📊  Insights"],
+        label_visibility="collapsed",
+    )
+
+    st.markdown("""
+    <hr style='border:none;border-top:1px solid #e5e7eb;margin:1.4rem 0 1rem;'>
+    <div style='font-size:0.75rem; color:#9ca3af; padding:0 0.4rem;'>
+      <b style='color:#374151;'>Dataset</b><br>
+      1,200 synthetic consumer records<br><br>
+      <b style='color:#374151;'>Models</b><br>
+      Logistic Regression · Decision Tree<br>
+      Random Forest · Gradient Boosting<br>
+      Support Vector Machine
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# Initialize data and train/test split
+
+df = load_data()
+X, y, encoders, feature_cols = encode_data(df)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+
+
+# --- Page: Overview ---
+
+if nav == "🏠  Overview":
+    st.markdown("""
+    <div class='hero-wrap'>
+      <div class='hero-badge'>🌿 Sustainability Intelligence</div>
+      <h1 class='hero-title'>
+        Predict <span>Green Consumer</span><br>Behavior with ML
+      </h1>
+      <p class='hero-subtitle'>
+        A modern machine learning platform for understanding eco-conscious purchasing patterns.
+        Train models, explore data, and generate real-time predictions.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Summary metric cards
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class='metric-pill'>
+          <div class='metric-val'>{len(df):,}</div>
+          <div class='metric-label'>Total Records</div>
+        </div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class='metric-pill'>
+          <div class='metric-val'>{len(feature_cols)}</div>
+          <div class='metric-label'>Features</div>
+        </div>""", unsafe_allow_html=True)
+    with col3:
+        pct = int(df["Green_Purchase_Behavior"].mean() * 100)
+        st.markdown(f"""
+        <div class='metric-pill'>
+          <div class='metric-val'>{pct}%</div>
+          <div class='metric-label'>Green Consumers</div>
+        </div>""", unsafe_allow_html=True)
+    with col4:
+        st.markdown("""
+        <div class='metric-pill'>
+          <div class='metric-val'>5</div>
+          <div class='metric-label'>ML Models</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Overview charts
+    c1, c2 = st.columns(2)
 
     with c1:
-        cm = confusion_matrix(y_test, y_pred_sel)
-        fig_cm, ax_cm = plt.subplots(figsize=(5, 4))
-        sns.heatmap(
-            cm,
-            annot=True,
-            fmt="d",
-            cmap="crest",
-            xticklabels=["Non-Green", "Green"],
-            yticklabels=["Non-Green", "Green"],
-            ax=ax_cm,
+        st.markdown("""
+        <div class='card'>
+          <div class='card-title'>📊 Target Distribution</div>
+          <div class='card-subtitle'>Green vs. Non-Green consumer split</div>
+        """, unsafe_allow_html=True)
+        counts = df["Green_Purchase_Behavior"].value_counts()
+        fig, ax = plt.subplots(figsize=(4, 2.8))
+        bars = ax.bar(
+            ["Non-Green", "Green"],
+            [counts[0], counts[1]],
+            color=["#d1fae5", "#22c55e"],
+            edgecolor="white",
+            linewidth=2,
+            width=0.5,
+            zorder=3,
         )
-        ax_cm.set_xlabel("Predicted")
-        ax_cm.set_ylabel("Actual")
-        ax_cm.set_title(f"{selected_model} Confusion Matrix")
-        render_plot(fig_cm)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.5, color="#e5e7eb", zorder=0)
+        style_ax(ax, ylabel="Count")
+        for bar, val in zip(bars, [counts[0], counts[1]]):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 8,
+                    str(val), ha="center", va="bottom", fontsize=9, fontweight="bold", color="#374151")
+        fig.tight_layout()
+        fig_to_st(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with c2:
-        fig_roc, ax_roc = plt.subplots(figsize=(6.2, 4.3))
-        ax_roc.plot([0, 1], [0, 1], "--", color="#94a3b8", alpha=0.7, label="Random (AUC=0.50)")
-        palette = ["#22c55e", "#38bdf8", "#f59e0b", "#f43f5e"]
+        st.markdown("""
+        <div class='card'>
+          <div class='card-title'>🧬 Environmental Awareness</div>
+          <div class='card-subtitle'>Distribution across all respondents</div>
+        """, unsafe_allow_html=True)
+        fig, ax = plt.subplots(figsize=(4, 2.8))
+        ax.hist(df["Environmental_Awareness"], bins=10, color="#22c55e",
+                edgecolor="white", linewidth=1.5, rwidth=0.85, zorder=3, alpha=0.85)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.5, color="#e5e7eb", zorder=0)
+        style_ax(ax, xlabel="Score (1–10)", ylabel="Frequency")
+        fig.tight_layout()
+        fig_to_st(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        for name, color in zip(model_names, palette):
-            model = trained[name]["model"]
-            if name in scaled_models:
-                y_prob = model.predict_proba(scaler.transform(x_test))[:, 1]
-            else:
-                y_prob = model.predict_proba(x_test)[:, 1]
-            fpr, tpr, _ = roc_curve(y_test, y_prob)
-            ax_roc.plot(fpr, tpr, color=color, lw=2, label=f"{name} (AUC={auc(fpr, tpr):.3f})")
+    # How-it-works workflow steps
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>How it works</h3><div class='line'></div>
+    </div>
+    <div class='card'>
+      <div style='display:flex; gap:1.8rem; flex-wrap:wrap;'>
+        <div style='flex:1; min-width:160px; text-align:center; padding:1rem;'>
+          <div style='font-size:2rem; margin-bottom:.5rem;'>🔬</div>
+          <div style='font-weight:700; font-size:.95rem; color:#1f2937;'>Explore Data</div>
+          <div style='font-size:.82rem; color:#9ca3af; margin-top:4px;'>Visualize patterns & distributions</div>
+        </div>
+        <div style='width:1px; background:#e5e7eb;'></div>
+        <div style='flex:1; min-width:160px; text-align:center; padding:1rem;'>
+          <div style='font-size:2rem; margin-bottom:.5rem;'>🤖</div>
+          <div style='font-weight:700; font-size:.95rem; color:#1f2937;'>Train Models</div>
+          <div style='font-size:.82rem; color:#9ca3af; margin-top:4px;'>Compare 5 ML algorithms</div>
+        </div>
+        <div style='width:1px; background:#e5e7eb;'></div>
+        <div style='flex:1; min-width:160px; text-align:center; padding:1rem;'>
+          <div style='font-size:2rem; margin-bottom:.5rem;'>🎯</div>
+          <div style='font-weight:700; font-size:.95rem; color:#1f2937;'>Predict</div>
+          <div style='font-size:.82rem; color:#9ca3af; margin-top:4px;'>Get real-time predictions</div>
+        </div>
+        <div style='width:1px; background:#e5e7eb;'></div>
+        <div style='flex:1; min-width:160px; text-align:center; padding:1rem;'>
+          <div style='font-size:2rem; margin-bottom:.5rem;'>📊</div>
+          <div style='font-weight:700; font-size:.95rem; color:#1f2937;'>Insights</div>
+          <div style='font-size:.82rem; color:#9ca3af; margin-top:4px;'>Feature importance & impact</div>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        ax_roc.set_xlabel("False Positive Rate")
-        ax_roc.set_ylabel("True Positive Rate")
-        ax_roc.set_title("ROC Curves")
-        ax_roc.legend(fontsize=8)
-        ax_roc.grid(alpha=0.2)
-        render_plot(fig_roc)
+
+# --- Page: Explore Data ---
+
+elif nav == "🔬  Explore Data":
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Explore Dataset</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Dataset preview table
+    st.markdown("<div class='card'><div class='card-title'>📋 Raw Data</div><div class='card-subtitle'>First 50 records of the dataset</div>", unsafe_allow_html=True)
+    st.dataframe(df.head(50), use_container_width=True, height=260)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Descriptive statistics
+    st.markdown("<div class='card'><div class='card-title'>📐 Summary Statistics</div><div class='card-subtitle'>Descriptive statistics for numerical features</div>", unsafe_allow_html=True)
+    st.dataframe(df.describe().T.style.background_gradient(cmap="Greens"), use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Numerical feature distributions by target class
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Feature Distributions</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    num_feats = ["Age", "Environmental_Awareness", "Social_Influence", "Eco_Label_Trust", "Price_Sensitivity"]
+    fig, axes = plt.subplots(1, len(num_feats), figsize=(14, 3.2))
+    for ax, feat in zip(axes, num_feats):
+        for val, color in [(0, "#d1fae5"), (1, "#22c55e")]:
+            ax.hist(df[df["Green_Purchase_Behavior"] == val][feat],
+                    bins=12, alpha=0.7, color=color, edgecolor="white", linewidth=1)
+        style_ax(ax, title=feat.replace("_", " "), xlabel="Value", ylabel="")
+        ax.yaxis.grid(True, linestyle="--", alpha=0.4, color="#e5e7eb")
+
+    patch0 = mpatches.Patch(color="#d1fae5", label="Non-Green")
+    patch1 = mpatches.Patch(color="#22c55e", label="Green")
+    fig.legend(handles=[patch0, patch1], loc="upper right", fontsize=8,
+               frameon=True, edgecolor="#e5e7eb")
+    fig.tight_layout(pad=1.5)
+
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    fig_to_st(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Green purchase rate by categorical features
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Categorical Features</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cat_feats = ["Income", "Education", "Purchase_Frequency", "Region"]
+    fig, axes = plt.subplots(2, 2, figsize=(12, 7))
+    for ax, feat in zip(axes.flatten(), cat_feats):
+        ct = df.groupby(feat)["Green_Purchase_Behavior"].mean().sort_values(ascending=False)
+        bars = ax.bar(ct.index, ct.values * 100, color=GREEN_PALETTE[:len(ct)],
+                      edgecolor="white", linewidth=1.5, zorder=3, width=0.55)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.4, color="#e5e7eb", zorder=0)
+        ax.axhline(50, color="#f87171", linewidth=1, linestyle="--", alpha=0.7)
+        for bar, val in zip(bars, ct.values * 100):
+            ax.text(bar.get_x() + bar.get_width() / 2, val + 0.5,
+                    f"{val:.0f}%", ha="center", va="bottom", fontsize=8, fontweight="bold", color="#374151")
+        style_ax(ax, title=f"% Green by {feat.replace('_', ' ')}", ylabel="%")
+        ax.set_xticklabels(ct.index, rotation=15, ha="right", fontsize=8)
+    fig.tight_layout(pad=2)
+
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    fig_to_st(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Correlation matrix for numerical features
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Correlation Heatmap</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    num_df = df[["Age", "Environmental_Awareness", "Social_Influence",
+                 "Eco_Label_Trust", "Price_Sensitivity", "Green_Purchase_Behavior"]]
+    fig, ax = plt.subplots(figsize=(8, 5.5))
+    mask = np.triu(np.ones_like(num_df.corr(), dtype=bool))
+    sns.heatmap(num_df.corr(), mask=mask, annot=True, fmt=".2f", cmap="Greens",
+                linewidths=0.5, linecolor="#f3f4f6", ax=ax,
+                annot_kws={"size": 9, "weight": "bold"},
+                cbar_kws={"shrink": .7})
+    ax.set_title("Feature Correlation Matrix", fontsize=12, fontweight="bold", color="#1f2937", pad=14)
+    ax.tick_params(colors="#6b7280", labelsize=8.5)
+    fig.tight_layout()
+    fig_to_st(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------
-# LIVE PREDICTION
-# ---------------------------------------------------------
-elif tab_choice == "Live Prediction":
-    st.markdown('<h2 class="section-title reveal">Live Green Consumer Prediction</h2>', unsafe_allow_html=True)
-    st.markdown(
-        """
-<div class="glass-card reveal">
-  <div class="card-text">Use this panel to generate real-time predictions with smooth, production-grade UX.</div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+# --- Page: Train Models ---
 
-    selected_model = st.selectbox("Choose Model", list(trained.keys()))
+elif nav == "🤖  Train Models":
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Model Training &amp; Comparison</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with st.form("prediction_form"):
-        c1, c2, c3 = st.columns(3, gap="large")
+    with st.spinner("⚙️  Training models — this takes a moment…"):
+        trained = train_models(X_train, X_test, y_train, y_test)
 
-        with c1:
-            age_in = st.slider("Age", 18, 70, 28)
-            income_in = st.number_input("Annual Income", 20000, 150000, 75000, step=5000)
-            gender_in = st.selectbox("Gender", ["Female (0)", "Male (1)"])
-            location_in = st.selectbox("Location", ["Rural (0)", "Suburban (1)", "Urban (2)"])
-            edu_in = st.selectbox(
-                "Education Level",
-                ["No Formal (0)", "High School (1)", "Graduate (2)", "Post-Graduate (3)"],
-            )
+    best_name = max(trained, key=lambda m: trained[m]["acc"])
+    best_acc  = trained[best_name]["acc"]
 
-        with c2:
-            env_concern = st.slider("Environmental Concern", 1, 10, 7)
-            eco_aware = st.slider("Eco Awareness", 1, 10, 7)
-            past_buy = st.slider("Past Green Purchases", 0, 19, 10)
-            soc_inf = st.slider("Social Influence", 1, 10, 6)
+    # Highlight the top-performing model
+    st.markdown(f"""
+    <div class='card' style='background:linear-gradient(135deg,#dcfce7,#f0fdf4);
+         border:1.5px solid #86efac; text-align:center;'>
+      <div style='font-size:.75rem;font-weight:700;text-transform:uppercase;
+           letter-spacing:.1em;color:#9ca3af;margin-bottom:.4rem;'>🏆 Best Performing Model</div>
+      <div style='font-family:"DM Serif Display",serif;font-size:2rem;color:#15803d;'>
+        {best_name}
+      </div>
+      <div style='font-size:1.5rem;font-weight:700;color:#16a34a;margin-top:.2rem;'>
+        {best_acc:.1%} Accuracy
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        with c3:
-            price_sens = st.slider("Price Sensitivity", 1, 10, 4)
-            mkt_exp = st.slider("Marketing Exposure", 1, 10, 6)
+    # Ranked accuracy comparison with progress bars
+    st.markdown("<div class='card'><div class='card-title'>📊 Accuracy Comparison</div><div class='card-subtitle'>Test-set accuracy across all models</div>", unsafe_allow_html=True)
+    sorted_models = sorted(trained.items(), key=lambda x: x[1]["acc"], reverse=True)
+    for name, info in sorted_models:
+        acc = info["acc"]
+        is_best = name == best_name
+        badge = "<span class='model-badge'>BEST</span>" if is_best else ""
+        row_cls = "model-row best" if is_best else "model-row"
+        bar_w = acc * 100
+        st.markdown(f"""
+        <div class='{row_cls}'>
+          <div style='width:180px; font-weight:{"700" if is_best else "500"};
+               font-size:.88rem; color:#1f2937;'>{name}</div>
+          {badge}
+          <div style='flex:1; background:#e5e7eb; border-radius:99px; height:8px; overflow:hidden;'>
+            <div style='width:{bar_w:.1f}%; height:100%;
+                 background:linear-gradient(90deg,#16a34a,#4ade80);
+                 border-radius:99px;'></div>
+          </div>
+          <div style='font-weight:700; font-size:.92rem; color:#15803d;
+               min-width:56px; text-align:right;'>{acc:.2%}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("Predict Now", use_container_width=True)
+    # Visual accuracy bar chart and classification report
+    c1, c2 = st.columns([3, 2])
+    with c1:
+        st.markdown("<div class='card'><div class='card-title'>📈 Visual Comparison</div><div class='card-subtitle'>Accuracy bars</div>", unsafe_allow_html=True)
+        names = [n.replace(" ", "\n") for n, _ in sorted_models]
+        accs  = [info["acc"] for _, info in sorted_models]
+        colors = [ACCENT if n.replace("\n", " ") == best_name else "#86efac" for n in names]
+        fig, ax = plt.subplots(figsize=(6, 3.5))
+        bars = ax.bar(names, accs, color=colors, edgecolor="white", linewidth=1.5, zorder=3, width=0.55)
+        ax.set_ylim(0.5, 1.0)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.5, color="#e5e7eb", zorder=0)
+        for bar, val in zip(bars, accs):
+            ax.text(bar.get_x() + bar.get_width() / 2, val + 0.003,
+                    f"{val:.2%}", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color="#374151")
+        style_ax(ax, ylabel="Accuracy")
+        fig.tight_layout()
+        fig_to_st(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    if submitted:
-        gender_val = int(gender_in.split("(")[1].replace(")", ""))
-        location_val = int(location_in.split("(")[1].replace(")", ""))
-        edu_val = int(edu_in.split("(")[1].replace(")", ""))
+    with c2:
+        st.markdown(f"<div class='card'><div class='card-title'>📋 Best Model Report</div><div class='card-subtitle'>{best_name}</div>", unsafe_allow_html=True)
+        report = trained[best_name]["report"]
+        for label, vals in report.items():
+            if isinstance(vals, dict):
+                name_display = {"0": "Non-Green", "1": "Green"}.get(label, label.title())
+                p = vals.get("precision", 0)
+                r = vals.get("recall", 0)
+                f = vals.get("f1-score", 0)
+                st.markdown(f"""
+                <div style='padding:8px 0; border-bottom:1px solid #f3f4f6;'>
+                  <div style='font-weight:700;font-size:.85rem;color:#374151;'>{name_display}</div>
+                  <div style='display:flex;gap:14px;font-size:.8rem;color:#6b7280;margin-top:3px;'>
+                    <span>Precision: <b style='color:#16a34a;'>{p:.2f}</b></span>
+                    <span>Recall: <b style='color:#16a34a;'>{r:.2f}</b></span>
+                    <span>F1: <b style='color:#16a34a;'>{f:.2f}</b></span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        user_data = pd.DataFrame(
-            [
-                {
-                    "Age": age_in,
-                    "Income": income_in,
-                    "Education_Level": edu_val,
-                    "Environmental_Concern": env_concern,
-                    "Social_Influence": soc_inf,
-                    "Eco_Awareness": eco_aware,
-                    "Past_Green_Purchases": past_buy,
-                    "Price_Sensitivity": price_sens,
-                    "Marketing_Exposure": mkt_exp,
-                    "Gender": gender_val,
-                    "Location": location_val,
-                }
-            ]
-        )[x_data.columns]
+    # Confusion matrix heatmap for the best model
+    st.markdown("<div class='card'><div class='card-title'>🔲 Confusion Matrix</div><div class='card-subtitle'>" + best_name + "</div>", unsafe_allow_html=True)
+    cm = trained[best_name]["cm"]
+    fig, ax = plt.subplots(figsize=(4.5, 3.5))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Greens",
+                xticklabels=["Non-Green", "Green"],
+                yticklabels=["Non-Green", "Green"],
+                linewidths=1, linecolor="#f3f4f6",
+                ax=ax, annot_kws={"size": 13, "weight": "bold"})
+    ax.set_xlabel("Predicted", fontsize=9, color="#9ca3af")
+    ax.set_ylabel("Actual",    fontsize=9, color="#9ca3af")
+    ax.tick_params(colors="#6b7280", labelsize=8.5)
+    ax.set_title("", pad=0)
+    fig.tight_layout()
+    fig_to_st(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-        model = trained[selected_model]["model"]
-        if selected_model in scaled_models:
-            user_sc = scaler.transform(user_data)
-            pred = model.predict(user_sc)[0]
-            prob = model.predict_proba(user_sc)[0][1] * 100
+
+# --- Page: Predict ---
+
+elif nav == "🎯  Predict":
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Live Prediction</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.spinner("🔄 Loading models…"):
+        trained = train_models(X_train, X_test, y_train, y_test)
+
+    best_name = max(trained, key=lambda m: trained[m]["acc"])
+
+    st.markdown(f"""
+    <div class='card' style='margin-bottom:1.2rem;'>
+      <div class='card-title'>⚡ Active Model</div>
+      <div style='display:flex;align-items:center;gap:10px;margin-top:6px;'>
+        <span style='font-size:1.1rem;font-weight:700;color:#15803d;'>{best_name}</span>
+        <span class='model-badge'>AUTO-SELECTED BEST</span>
+      </div>
+      <div style='font-size:.82rem;color:#9ca3af;margin-top:4px;'>
+        Accuracy: {trained[best_name]['acc']:.2%}
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Consumer profile input form
+    st.markdown("<div class='card'><div class='card-title'>🧾 Consumer Profile</div><div class='card-subtitle'>Enter features to generate a prediction</div>", unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        age       = st.slider("🎂 Age", 18, 70, 30)
+        income    = st.selectbox("💰 Income Level", ["Low", "Medium", "High"])
+        education = st.selectbox("🎓 Education", ["High School", "Bachelor's", "Master's", "PhD"])
+    with c2:
+        env_aw    = st.slider("🌱 Environmental Awareness", 1, 10, 7)
+        soc_inf   = st.slider("👥 Social Influence", 1, 10, 6)
+        eco_trust = st.slider("🏷️ Eco-Label Trust", 1, 10, 7)
+    with c3:
+        price_s   = st.slider("💲 Price Sensitivity", 1, 10, 5)
+        purch_freq= st.selectbox("🛒 Purchase Frequency", ["Rarely", "Sometimes", "Often", "Always"])
+        region    = st.selectbox("📍 Region", ["Urban", "Suburban", "Rural"])
+
+    predict_btn = st.button("🎯  Generate Prediction", use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if predict_btn:
+        input_dict = {
+            "Age": age,
+            "Income": encoders["Income"].transform([income])[0],
+            "Education": encoders["Education"].transform([education])[0],
+            "Environmental_Awareness": env_aw,
+            "Social_Influence": soc_inf,
+            "Eco_Label_Trust": eco_trust,
+            "Price_Sensitivity": price_s,
+            "Purchase_Frequency": encoders["Purchase_Frequency"].transform([purch_freq])[0],
+            "Region": encoders["Region"].transform([region])[0],
+        }
+        input_df = pd.DataFrame([input_dict])
+        model_info = trained[best_name]
+        mdl = model_info["model"]
+        scaler = model_info["scaler"]
+        X_in = scaler.transform(input_df) if scaler else input_df
+        pred = mdl.predict(X_in)[0]
+        prob = mdl.predict_proba(X_in)[0][pred]
+        conf_label, conf_cls = confidence_label(prob)
+
+        if pred == 1:
+            st.markdown(f"""
+            <div class='result-card-positive'>
+              <div class='result-label'>Prediction Result</div>
+              <div class='result-value' style='color:#15803d;'>🌿 Green Consumer</div>
+              <div style='color:#374151;font-size:.95rem;margin:.4rem 0;'>
+                This consumer is likely to make eco-friendly purchases.
+              </div>
+              <span class='confidence-tag {conf_cls}'>{conf_label}</span>
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            pred = model.predict(user_data)[0]
-            prob = model.predict_proba(user_data)[0][1] * 100
+            st.markdown(f"""
+            <div class='result-card-negative'>
+              <div class='result-label'>Prediction Result</div>
+              <div class='result-value' style='color:#dc2626;'>❌ Non-Green Consumer</div>
+              <div style='color:#374151;font-size:.95rem;margin:.4rem 0;'>
+                This consumer is unlikely to prioritize eco-friendly purchases.
+              </div>
+              <span class='confidence-tag {conf_cls}'>{conf_label}</span>
+            </div>
+            """, unsafe_allow_html=True)
 
-        confidence = "High" if prob > 80 else "Moderate" if prob >= 60 else "Low"
-
-        col_res, col_stats = st.columns([1.7, 1], gap="large")
-
-        with col_res:
-            if pred == 1:
-                st.markdown(
-                    f"""
-<div class="glass-card reveal" style="border-color: rgba(34,197,94,.45);">
-  <div class="card-title">Prediction: Green Consumer</div>
-  <div class="card-text">Likely to prefer eco-friendly products.</div>
-  <div class="soft-divider"></div>
-  <div class="card-text">Confidence level: <strong>{confidence}</strong></div>
-</div>
-""",
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    f"""
-<div class="glass-card reveal" style="border-color: rgba(244,63,94,.45);">
-  <div class="card-title">Prediction: Non-Green Consumer</div>
-  <div class="card-text">Less likely to prefer eco-friendly products.</div>
-  <div class="soft-divider"></div>
-  <div class="card-text">Confidence level: <strong>{confidence}</strong></div>
-</div>
-""",
-                    unsafe_allow_html=True,
-                )
-
-        with col_stats:
-            st.markdown(
-                f"""
-<div class="metric-grid reveal" style="grid-template-columns: 1fr;">
-  <div class="metric">
-    <div class="metric-kicker">Green Probability</div>
-    <div class="metric-value">{prob:.1f}%</div>
-    <div class="metric-label">Positive class</div>
-  </div>
-  <div class="metric">
-    <div class="metric-kicker">Non-Green Probability</div>
-    <div class="metric-value">{100 - prob:.1f}%</div>
-    <div class="metric-label">Negative class</div>
-  </div>
-  <div class="metric">
-    <div class="metric-kicker">Model</div>
-    <div class="metric-value" style="font-size:1.1rem;">{selected_model}</div>
-    <div class="metric-label">Selected classifier</div>
-  </div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-
-        fig, ax = plt.subplots(figsize=(7, 1.7))
-        ax.barh([""], [prob], color="#22c55e", height=0.4)
-        ax.barh([""], [100 - prob], left=[prob], color="#f43f5e", height=0.4)
-        ax.set_xlim(0, 100)
-        ax.set_xlabel("Probability")
-        ax.axvline(50, color="#94a3b8", linestyle="--", linewidth=1)
-        ax.set_title("Green vs Non-Green Probability")
-        render_plot(fig)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'><div class='card-title'>📊 Prediction Confidence: {prob:.1%}</div>", unsafe_allow_html=True)
+        st.progress(float(prob))
+        st.markdown(f"""
+        <div style='display:flex;justify-content:space-between;font-size:.8rem;color:#9ca3af;margin-top:4px;'>
+          <span>0%</span><span>50%</span><span>100%</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------
-# PROJECT INFO
-# ---------------------------------------------------------
-else:
-    st.markdown('<h2 class="section-title reveal">Project Architecture</h2>', unsafe_allow_html=True)
-    st.code(
-        f"""
-[Data Generation] -> [EDA] -> [Preprocessing] -> [Model Training]
-                                        |
-                  +---------------------+----------------------+
-                  | Logistic Regression | Decision Tree        |
-                  | Random Forest       | Gradient Boosting    |
-                  +---------------------+----------------------+
-                                        |
-                                  [Evaluation]
-                             Accuracy / ROC-AUC / Insights
-                                        |
-                               [Streamlit Premium UI]
-Best model: {best_model_name}
-""",
-        language="text",
+# --- Page: Insights ---
+
+elif nav == "📊  Insights":
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Feature Importance &amp; Insights</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.spinner("🔄 Loading models…"):
+        trained = train_models(X_train, X_test, y_train, y_test)
+
+    # Extract feature importance scores from the Random Forest model
+    rf_model = trained["Random Forest"]["model"]
+    importances = rf_model.feature_importances_
+    feat_imp = pd.Series(importances, index=feature_cols).sort_values(ascending=True)
+
+    st.markdown("<div class='card'><div class='card-title'>🌲 Feature Importance</div><div class='card-subtitle'>From Random Forest — which factors drive green behavior most?</div>", unsafe_allow_html=True)
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    colors_bar = [ACCENT if v == feat_imp.max() else "#86efac" for v in feat_imp.values]
+    bars = ax.barh(
+        [f.replace("_", " ") for f in feat_imp.index],
+        feat_imp.values,
+        color=colors_bar,
+        edgecolor="white",
+        linewidth=1.5,
+        height=0.65,
+        zorder=3,
     )
+    ax.xaxis.grid(True, linestyle="--", alpha=0.5, color="#e5e7eb", zorder=0)
+    for bar, val in zip(bars, feat_imp.values):
+        ax.text(val + 0.001, bar.get_y() + bar.get_height() / 2,
+                f"{val:.3f}", va="center", fontsize=8, fontweight="bold", color="#374151")
+    style_ax(ax, xlabel="Importance Score")
+    fig.tight_layout()
+    fig_to_st(fig)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="stack"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-title reveal">Future Scope</h2>', unsafe_allow_html=True)
+    # Display top three most influential features
+    top3 = feat_imp.sort_values(ascending=False).head(3)
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Top Drivers</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    next_steps = [
-        "Use real purchase and survey datasets for stronger generalization",
-        "Add explainability with SHAP for transparent predictions",
-        "Extend to multi-class green behavior scoring",
-        "Serve predictions through API endpoints for integration",
-        "Track longitudinal behavior trends with time-series modeling",
-    ]
+    icons = ["🥇", "🥈", "🥉"]
+    cols  = st.columns(3)
+    for col, (feat, val), icon in zip(cols, top3.items(), icons):
+        with col:
+            st.markdown(f"""
+            <div class='metric-pill'>
+              <div style='font-size:1.6rem;'>{icon}</div>
+              <div style='font-weight:700;font-size:.95rem;color:#1f2937;margin:.5rem 0 .2rem;'>
+                {feat.replace('_', ' ')}
+              </div>
+              <div class='metric-val' style='font-size:1.5rem;'>{val:.3f}</div>
+              <div class='metric-label'>importance</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    cols = st.columns(2, gap="large")
-    for idx, item in enumerate(next_steps):
-        with cols[idx % 2]:
-            st.markdown(
-                f"""
-<div class="glass-card reveal">
-  <div class="card-title">Roadmap {idx + 1:02d}</div>
-  <div class="card-text">{item}</div>
+    # Behavioral pattern visualizations
+    st.markdown("""
+    <div class='section-divider'>
+      <h3>Behavioral Patterns</h3><div class='line'></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("<div class='card'><div class='card-title'>🌱 Awareness vs Social Influence</div>", unsafe_allow_html=True)
+        fig, ax = plt.subplots(figsize=(5, 3.6))
+        colors = df["Green_Purchase_Behavior"].map({0: "#d1fae5", 1: "#16a34a"})
+        ax.scatter(df["Environmental_Awareness"], df["Social_Influence"],
+                   c=colors, alpha=0.55, s=18, edgecolors="white", linewidths=0.5, zorder=3)
+        ax.xaxis.grid(True, linestyle="--", alpha=0.4, color="#e5e7eb", zorder=0)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.4, color="#e5e7eb", zorder=0)
+        style_ax(ax, xlabel="Environmental Awareness", ylabel="Social Influence")
+        p0 = mpatches.Patch(color="#d1fae5", label="Non-Green")
+        p1 = mpatches.Patch(color="#16a34a", label="Green")
+        ax.legend(handles=[p0, p1], fontsize=8, frameon=True, edgecolor="#e5e7eb")
+        fig.tight_layout()
+        fig_to_st(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with c2:
+        st.markdown("<div class='card'><div class='card-title'>💲 Price Sensitivity by Behavior</div>", unsafe_allow_html=True)
+        fig, ax = plt.subplots(figsize=(5, 3.6))
+        g0 = df[df["Green_Purchase_Behavior"] == 0]["Price_Sensitivity"]
+        g1 = df[df["Green_Purchase_Behavior"] == 1]["Price_Sensitivity"]
+        bp = ax.boxplot([g0, g1], labels=["Non-Green", "Green"],
+                        patch_artist=True, notch=True, widths=0.45,
+                        medianprops=dict(color="white", linewidth=2))
+        colors_box = ["#d1fae5", "#22c55e"]
+        for patch, color in zip(bp["boxes"], colors_box):
+            patch.set_facecolor(color)
+        ax.yaxis.grid(True, linestyle="--", alpha=0.4, color="#e5e7eb", zorder=0)
+        style_ax(ax, ylabel="Price Sensitivity Score")
+        fig.tight_layout()
+        fig_to_st(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# Footer
+st.markdown("""
+<div class='footer'>
+  🌿 GreenSense · Machine Learning Platform &nbsp;·&nbsp;
+  Built with Streamlit &amp; scikit-learn &nbsp;·&nbsp;
+  Data is synthetic &amp; for demonstration purposes
 </div>
-""",
-                unsafe_allow_html=True,
-            )
+""", unsafe_allow_html=True)
